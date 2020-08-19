@@ -11,6 +11,7 @@ import numpy as np
 from functools import reduce
 from typing import List, Tuple, Callable, Dict, Any
 from pyquaternion import Quaternion
+import matplotlib.pyplot as plt
 
 import cv2
 
@@ -18,41 +19,36 @@ import sys
 print(sys.path)
 Color = Tuple[float, float, float]
 
-def get_track_trajectory(annotation: Dict[str, Any],
-                         center_coordinates: Tuple[float, float],
-                         center_pixels: Tuple[float, float],
-                         resolution: float = 0.1) -> np.ndarray:
-    """
-    Get four corners of bounding box for agent in pixels.
-    :param annotation: The annotation record of the agent.
-    :param center_coordinates: (x, y) coordinates in global frame
-        of the center of the image.
-    :param center_pixels: (row_index, column_index) location of the center
-        of the image in pixel coordinates.
-    :param resolution: Resolution pixels/meter of the image.
-    """
-
-    assert resolution > 0
+def get_instance_location_yaw(annotation: Dict[str, Any]):
 
     location = annotation['translation'][:2]
     yaw_in_radians = quaternion_yaw(Quaternion(annotation['rotation']))
 
-    row_pixel, column_pixel = convert_to_pixel_coords(location,
-                                                      center_coordinates,
-                                                      center_pixels, resolution)
+    return location, yaw_in_radians
 
-    width = annotation['size'][0] / resolution
-    length = annotation['size'][1] / resolution
+def draw_trajectory(image: np.ndarray,
+                    annotation: Dict[str, Any],
+                    trajecotry: np.ndarray,
+                    center_pixels: Tuple[float, float],
+                    resolution: float = 0.1
+                    ) -> None:
+    assert resolution > 0
+    instance_location, instance_yaw_in_radius = get_instance_location_yaw(annotation)
 
-    # Width and length are switched here so that we can draw them along the x-axis as
-    # opposed to the y. This makes rotation easier.
-    return pixels_to_box_corners(row_pixel, column_pixel, length, width, yaw_in_radians)
+    trajecotry_global = trajecotry + instance_location
+    row_pixel = []
+    column_pixel = []
+    for pos_x, pos_y in trajecotry[:, 0], trajecotry[:, 1]:
+        continue
+
+
 
 
 def draw_instance_box(center_agent_annotation: Dict[str, Any],
                      center_agent_pixels: Tuple[float, float],
                      agent_history: History,
                      base_image: np.ndarray,
+                     trajectory: np.ndarray,
                      resolution: float = 0.1) -> None:
     """
     Draws past sequence of agent boxes on the image.
@@ -82,6 +78,8 @@ def draw_instance_box(center_agent_annotation: Dict[str, Any],
             box = get_track_box(annotation, (agent_x, agent_y), center_agent_pixels, resolution)
             test = np.int0(box)
             cv2.fillPoly(base_image, pts=[np.int0(box)], color=color)
+
+            draw_trajectory(base_image, annotation, trajectory, center_agent_pixels, resolution)
 
 class MapRepresentation():
     """
@@ -190,7 +188,7 @@ class InstanceRepresentation():
 
         self.color_mapping = color_mapping
 
-    def make_representation(self, instance_token: str, sample_token: str) -> np.ndarray:
+    def make_representation(self, instance_token: str, sample_token: str, trajectory: np.ndarray) -> np.ndarray:
         # Taking radius around track before to ensure all actors are in image
         buffer = max([self.meters_ahead, self.meters_behind,
                       self.meters_left, self.meters_right]) * 2
@@ -215,7 +213,10 @@ class InstanceRepresentation():
         center_agent_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
 
         draw_instance_box(center_agent_annotation, central_track_pixels,
-                         history, base_image, resolution=self.resolution)
+                         history, base_image, trajectory, resolution=self.resolution)
+        # draw_trajectory()
+        plt.imshow(base_image)
+        plt.show()
 
         center_agent_yaw = quaternion_yaw(Quaternion(center_agent_annotation['rotation']))
         rotation_mat = get_rotation_matrix(base_image.shape, center_agent_yaw)
@@ -256,10 +257,10 @@ class Visualization:
         base_image = np.zeros(image_shape).astype("uint8")
         return reduce(add_foreground_to_image, [base_image] + data)
 
-    def make_static_layers(self, instance_token: str, sample_token: str) -> np.ndarray:
+    def make_static_layers(self, instance_token: str, sample_token: str, trajectory: np.ndarray) -> np.ndarray:
         static_layers = self.static_layer_rasterizer.make_layer_representation(instance_token, sample_token)
         # agents = np.zeros(static_layers.shape, dtype=np.uint8)
-        agents_1 = self.agent_rasterizer.make_representation(instance_token, sample_token)
+        agents_1 = self.agent_rasterizer.make_representation(instance_token, sample_token, trajectory)
 
         # return static_layers
         return self.combine([static_layers, agents_1])

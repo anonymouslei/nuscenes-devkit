@@ -9,7 +9,6 @@ from nuscenes.eval.prediction.splits import get_prediction_challenge_split
 from nuscenes.map_expansion.map_api import NuScenesMap
 from nuscenes.prediction import PredictHelper
 from nuscenes import NuScenes
-# from visualization.visualization_result import Visualization
 
 import sys
 print(sys.path)
@@ -41,17 +40,14 @@ nusc_map = NuScenesMap(map_name='singapore-onenorth', dataroot=DATAROOT)
 # input representation
 static_layer_rasterizer = StaticLayerRasterizer(helper)
 agent_rasterizer = AgentBoxesWithFadedHistory(helper, seconds_of_history=6)
-map_layer_rasterizer = MapRepresentation(helper)
-instance_rasterizer = InstanceRepresentation(helper, seconds_of_history=0)
 mtp_input_representation = InputRepresentation(static_layer_rasterizer, agent_rasterizer, Rasterizer())
 
 instance_token_img, sample_token_img = 'bc38961ca0ac4b14ab90e547ba79fbb6', '7626dde27d604ac28a0240bdd54eba7a'
 # anns = [ann for ann in nuscenes.sample_annotation if ann['instance_token'] == instance_token_img]
-# img = mtp_input_representation.make_input_representation(instance_token_img, sample_token_img)
+img = mtp_input_representation.make_input_representation(instance_token_img, sample_token_img)
 # img = mtp_input_representation.make_static_layers(instance_token_img, sample_token_img)
 
-result_visualization = Visualization(map_layer_rasterizer, instance_rasterizer, Rasterizer)
-img = result_visualization.make_static_layers(instance_token_img, sample_token_img)
+
 plt.imshow(img)
 plt.show()
 
@@ -110,10 +106,19 @@ index = logits.argsort(descending=True)[:,0]
 # plt.xlim(-45, 42)
 # plt.ylim(-10, 120)
 
-# trajectories_8 = trajectories_8.numpy()
-# trajectories_8 = trajectories_8[index,:,:]
-# plt.plot(trajectories_8[:, 0], trajectories_8[:, 1])
-# plt.xlim(-45, 42)
-# plt.ylim(-10, 120)
-# plt.title("the best trajectory")
-# plt.show()
+trajectories_8 = trajectories_8.numpy()
+trajectories_8 = trajectories_8[index,:,:]
+plt.plot(trajectories_8[:, 0], trajectories_8[:, 1])
+plt.xlim(-45, 42)
+plt.ylim(-10, 120)
+plt.title("the best trajectory")
+plt.show()
+
+map_layer_rasterizer = MapRepresentation(helper)
+instance_rasterizer = InstanceRepresentation(helper, seconds_of_history=0)
+mtp_input_representation = InputRepresentation(static_layer_rasterizer, agent_rasterizer, Rasterizer())
+
+result_visualization = Visualization(map_layer_rasterizer, instance_rasterizer, Rasterizer)
+img = result_visualization.make_static_layers(instance_token_img, sample_token_img, trajectories_8)
+plt.imshow(img)
+plt.show()
