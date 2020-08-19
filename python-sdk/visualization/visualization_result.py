@@ -29,6 +29,7 @@ def get_instance_location_yaw(annotation: Dict[str, Any]):
 def draw_trajectory(image: np.ndarray,
                     annotation: Dict[str, Any],
                     trajecotry: np.ndarray,
+                    center_coordinates: Tuple[float, float],
                     center_pixels: Tuple[float, float],
                     resolution: float = 0.1
                     ) -> None:
@@ -36,12 +37,18 @@ def draw_trajectory(image: np.ndarray,
     instance_location, instance_yaw_in_radius = get_instance_location_yaw(annotation)
 
     trajecotry_global = trajecotry + instance_location
-    row_pixel = []
-    column_pixel = []
-    for pos_x, pos_y in trajecotry[:, 0], trajecotry[:, 1]:
-        continue
+    row_pixels = []
+    column_pixels = []
+    for pos_x, pos_y in zip(trajecotry_global[:, 0], trajecotry_global[:, 1]):
+        row_pixel, column_pixel = convert_to_pixel_coords((pos_x, pos_y), center_coordinates, center_pixels)
+        row_pixels.append(row_pixel)
+        column_pixels.append(column_pixel)
 
+    row_pixels = np.asarray(row_pixels)
+    column_pixels = np.asarray(column_pixels)
 
+    for r_pixel, c_pixel in zip(row_pixels, column_pixels):
+        cv2.circle(image, (r_pixel, c_pixel), 5, (255, 153, 51))
 
 
 def draw_instance_box(center_agent_annotation: Dict[str, Any],
@@ -75,11 +82,13 @@ def draw_instance_box(center_agent_annotation: Dict[str, Any],
 
         for i, annotation in enumerate(annotations):
 
+            center_coordinates = (agent_x, agent_y)
             box = get_track_box(annotation, (agent_x, agent_y), center_agent_pixels, resolution)
             test = np.int0(box)
             cv2.fillPoly(base_image, pts=[np.int0(box)], color=color)
 
-            draw_trajectory(base_image, annotation, trajectory, center_agent_pixels, resolution)
+            draw_trajectory(base_image, annotation, trajectory, center_coordinates,center_agent_pixels, resolution)
+
 
 class MapRepresentation():
     """

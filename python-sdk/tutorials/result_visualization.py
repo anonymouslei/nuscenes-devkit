@@ -12,14 +12,20 @@ from nuscenes import NuScenes
 
 import sys
 print(sys.path)
-sys.path.append('/home/jfei/leige/code/nuscenes-devkit/python-sdk/visualization')
-sys.path.append('/home/jfei/leige/code/nuscenes-devkit/python-sdk/tutorials')
-sys.path.append('/home/jfei/leige/code/nuscenes-devkit/python-sdk')
+sys.path.append('/home/leige/leige/code/nuscenes-devkit/python-sdk/visualization')
+sys.path.append('/home/leige/leige/code/nuscenes-devkit/python-sdk/tutorials')
+sys.path.append('/home/leige/leige/code/nuscenes-devkit/python-sdk')
 from visualization.visualization_result import Visualization, MapRepresentation, InstanceRepresentation
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 
-DATAROOT = '/home/jfei/leige/datasets/nuscenes/v1.0_mini_asia'
+
+def plot_trajectory(trajectory: np.ndarray) -> None:
+    plt.plot(trajectory[:, 0], trajectory[:, 1])
+    plt.show()
+
+DATAROOT = '/home/leige/leige/dataset/nuscenes/v1.0_mini'
 
 nuscenes = NuScenes('v1.0-mini', dataroot=DATAROOT)
 
@@ -30,8 +36,10 @@ mini_train = get_prediction_challenge_split("mini_train", dataroot=DATAROOT)
 helper = PredictHelper(nuscenes)
 instance_token, sample_token = mini_train[0].split("_")
 annotation = helper.get_sample_annotation(instance_token, sample_token)
-future_xy_local = helper.get_future_for_agent(instance_token, sample_token, seconds=3, in_agent_frame=True)
-future_xy_global = helper.get_future_for_agent(instance_token, sample_token, seconds=3, in_agent_frame=False)
+future_xy_local = helper.get_future_for_agent(instance_token, sample_token, seconds=6, in_agent_frame=False)
+plot_trajectory(future_xy_local)
+future_xy_global = helper.get_future_for_agent(instance_token, sample_token, seconds=6, in_agent_frame=False)
+plot_trajectory(future_xy_global)
 helper.get_future_for_agent(instance_token, sample_token, seconds=3, in_agent_frame=True, just_xy=False)
 sample = helper.get_annotations_for_sample(sample_token)
 
@@ -49,7 +57,7 @@ img = mtp_input_representation.make_input_representation(instance_token_img, sam
 
 
 plt.imshow(img)
-plt.show()
+# plt.show()
 
 # Model Implementations
 backbone = ResNetBackbone("resnet50")
@@ -82,9 +90,9 @@ import pickle
 # We released the set for epsilon = 2, 4, 8. Consult the paper for more information
 # on how this set was created
 
-PATH_TO_EPSILON_8_SET = "/home/jfei/leige/datasets/nuscenes/nuscenes-prediction-challenge-trajectory-sets/epsilon_8.pkl"
-PATH_TO_EPSILON_4_SET = "/home/jfei/leige/datasets/nuscenes/nuscenes-prediction-challenge-trajectory-sets/epsilon_4.pkl"
-PATH_TO_EPSILON_2_SET = "/home/jfei/leige/datasets/nuscenes/nuscenes-prediction-challenge-trajectory-sets/epsilon_2.pkl"
+PATH_TO_EPSILON_8_SET = "/home/leige/leige/dataset/nuscenes/nuscenes-prediction-challenge-trajectory-sets/epsilon_8.pkl"
+PATH_TO_EPSILON_4_SET = "/home/leige/leige/dataset/nuscenes/nuscenes-prediction-challenge-trajectory-sets/epsilon_4.pkl"
+PATH_TO_EPSILON_2_SET = "/home/leige/leige/dataset/nuscenes/nuscenes-prediction-challenge-trajectory-sets/epsilon_2.pkl"
 trajectories_8 = pickle.load(open(PATH_TO_EPSILON_8_SET, 'rb'))
 trajectories_4 = pickle.load(open(PATH_TO_EPSILON_4_SET, 'rb'))
 trajectories_2 = pickle.load(open(PATH_TO_EPSILON_2_SET, 'rb'))
@@ -112,7 +120,7 @@ plt.plot(trajectories_8[:, 0], trajectories_8[:, 1])
 plt.xlim(-45, 42)
 plt.ylim(-10, 120)
 plt.title("the best trajectory")
-plt.show()
+# plt.show()
 
 map_layer_rasterizer = MapRepresentation(helper)
 instance_rasterizer = InstanceRepresentation(helper, seconds_of_history=0)
