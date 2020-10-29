@@ -1,9 +1,14 @@
+# Code written by Lei Ge, 2020.
+# KIT-MRT
 import numpy as np
 import matplotlib.pyplot as plt
 
 # steering_angle = 0.5
 max_accel = 1.6
-
+delta_steer = 100
+delta_accel = 1
+category_v = "vehicle"
+category_v = "pedestrian"
 
 class TrajectorySets:
 
@@ -39,12 +44,13 @@ class TrajectorySets:
         self.initialization()
 
     def generate_trajectory_sets(self):
-        delta_steer = 20
-        delta_accel = 1
+        # delta_steer = 100
+        # delta_accel = 1
 
-        u_steer_sets = self.generate_normal_random(self.steering_angle/5, delta_steer*2)
+        # u_steer_sets = self.generate_normal_random(self.steering_angle/5, delta_steer*2)
 
         for i in range(delta_accel):
+            u_steer_sets = self.generate_normal_random(self.steering_angle/5, delta_steer * 2)
             for j in range(delta_steer * 2):
                 self.generate_trajectory()
                 # self.u_steer += self.steering_angle/delta_steer
@@ -61,8 +67,21 @@ class TrajectorySets:
         self.theta = 0
 
     def print_trajectory(self, category):
+        i = 0
         for y, x in zip(self.trajectory_sets_x, self.trajectory_sets_y):
-            plt.plot(x, y)
+            if category == 'pedestrian' or category == "bicycle":
+                plt.plot(x, y)
+            elif i < delta_steer * 2:
+                plt.plot(x, y, color="b")
+            elif i < 2 * delta_steer * 2:
+                plt.plot(x, y, color='g')
+            elif i < 3 * delta_steer * 2:
+                plt.plot(x, y, color='r')
+            elif i < 4 * delta_steer * 2:
+                plt.plot(x, y, color='c')
+            elif i < 5 * delta_steer * 2:
+                plt.plot(x, y, color='y')
+            i += 1
 
         # plt.xlim(-3.5, 3.5)
         # plt.ylim(0, 14)
@@ -74,7 +93,11 @@ class TrajectorySets:
 
     def generate_normal_random(self, sigma, sampleNo):
         mu = 0
-        np.random.seed(0)
+        if category_v == "vehicle":
+            r = np.random.rand(1)
+            np.random.seed(int(10 * r))
+        else:
+            np.random.seed(0)
         s = np.random.normal(mu, sigma, sampleNo)
         return s
 
@@ -83,14 +106,14 @@ class TrajectorySets:
 # assert
 
 if __name__ == '__main__':
-    pedestrian = TrajectorySets(velocity=1, wheelbase=0.6, acceleration=0.1)
+    pedestrian = TrajectorySets(velocity=1, wheelbase=0.6, acceleration=0.1, steering_angle=0.5)
     pedestrian.generate_trajectory_sets()
-    pedestrian.print_trajectory("pedestrain")
+    pedestrian.print_trajectory("pedestrian")
 
-    vehicle = TrajectorySets(velocity=1, wheelbase=0.6)
-    vehicle.generate_trajectory_sets()
-    vehicle.print_trajectory("vehicle")
+    # vehicle = TrajectorySets(velocity=10, wheelbase=3, acceleration=0.5, steering_angle=0.2)
+    # vehicle.generate_trajectory_sets()
+    # vehicle.print_trajectory("vehicle")
 
-    bicycle = TrajectorySets(velocity=1, wheelbase=0.6)
-    bicycle.generate_trajectory_sets()
-    bicycle.print_trajectory("bicycle")
+    # bicycle = TrajectorySets(velocity=4, wheelbase=1.5, acceleration=1, steering_angle=0.4)
+    # bicycle.generate_trajectory_sets()
+    # bicycle.print_trajectory("bicycle")
