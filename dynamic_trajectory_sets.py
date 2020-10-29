@@ -1,3 +1,5 @@
+# Code written by Lei Ge, 2020.
+# KIT-MRT
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -30,12 +32,12 @@ class TrajectorySets:
         self.y = self.y + self.v * np.sin(self.theta) * delta_t
         # print(self.v)
 
-    def generate_trajectory(self, u_steer_sets):
+    def generate_trajectory(self):
         trajectory_x = []
         trajectory_y = []
 
         for i in range(600):
-            self.u_steer = u_steer_sets[i]
+            # self.u_steer = u_steer_sets[i]
             self.state_equation()
             trajectory_x.append(self.x)
             trajectory_y.append(self.y)
@@ -44,15 +46,12 @@ class TrajectorySets:
         self.initialization()
 
     def generate_trajectory_sets(self):
-
         for i in range(delta_accel):
-            u_steer_sets = self.generate_normal_random(self.steering_angle, delta_steer * 2 * 600)
-            u_steer_sets = u_steer_sets.reshape((600, -1))
-
+            u_steer_sets = self.generate_normal_random(self.steering_angle/5, delta_steer * 2)
             for j in range(delta_steer * 2):
-                self.generate_trajectory(u_steer_sets[:, j])
+                self.generate_trajectory()
                 # self.u_steer += self.steering_angle/delta_steer
-                # self.u_steer = u_steer_sets[j]
+                self.u_steer = u_steer_sets[j]
 
             self.u_accel += max_accel/delta_accel
             # self.u_steer = -self.steering_angle
@@ -99,16 +98,12 @@ class TrajectorySets:
         s = np.random.normal(mu, sigma, sampleNo)
         return s
 
-# def state_equation_test():
-#     test = TrajectorySets(10)
-# assert
 
 if __name__ == '__main__':
-
     # TODO: write a josn file to load the configuration of pedestrian, vehicle, bicycle
-    # pedestrian = TrajectorySets(velocity=1, wheelbase=0.6, acceleration=0.1, steering_angle=0.5, category="pedestrian")
-    # pedestrian.generate_trajectory_sets()
-    # pedestrian.print_trajectory()
+    pedestrian = TrajectorySets(velocity=1, wheelbase=0.6, acceleration=0.1, steering_angle=0.5, category="pedestrian")
+    pedestrian.generate_trajectory_sets()
+    pedestrian.print_trajectory()
 
     # vehicle = TrajectorySets(velocity=10, wheelbase=3, acceleration=0.5, steering_angle=0.2, category="vehicle")
     # vehicle.generate_trajectory_sets()
